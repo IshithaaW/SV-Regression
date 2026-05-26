@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,51 +7,53 @@ from sklearn.svm import SVR
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score, mean_squared_error
 
-# -----------------------------
-# Page Configuration
-# -----------------------------
+# --------------------------------
+# Page Config
+# --------------------------------
 st.set_page_config(
-    page_title="Wine Quality SVR",
+    page_title="Wine Quality Prediction",
     page_icon="🍷",
     layout="centered"
 )
 
 st.title("🍷 Wine Quality Prediction using SVR")
-st.write("Support Vector Regression on Wine Quality Dataset")
 
-# -----------------------------
+# --------------------------------
 # Load Dataset
-# -----------------------------
-df = pd.read_csv("wine_quality.csv")
+# --------------------------------
+try:
+    df = pd.read_csv("wine_quality.csv")
+except FileNotFoundError:
+    st.error("wine_quality.csv file not found")
+    st.stop()
 
-# -----------------------------
-# Dataset Preview
-# -----------------------------
+# --------------------------------
+# Show Dataset
+# --------------------------------
 st.subheader("Dataset Preview")
 st.dataframe(df.head())
 
-# -----------------------------
+# --------------------------------
 # Features and Target
-# -----------------------------
+# --------------------------------
 X = df.drop("quality", axis=1)
 y = df["quality"]
 
-# -----------------------------
+# --------------------------------
 # Feature Scaling
-# -----------------------------
+# --------------------------------
 x_scaler = StandardScaler()
 y_scaler = StandardScaler()
 
 X_scaled = x_scaler.fit_transform(X)
 
-# Scale target variable
 y_scaled = y_scaler.fit_transform(
     y.values.reshape(-1, 1)
 ).flatten()
 
-# -----------------------------
-# Train-Test Split
-# -----------------------------
+# --------------------------------
+# Train Test Split
+# --------------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X_scaled,
     y_scaled,
@@ -61,19 +61,18 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=42
 )
 
-# -----------------------------
-# Train SVR Model
-# -----------------------------
-model = SVR(kernel='rbf')
+# --------------------------------
+# Train Model
+# --------------------------------
+model = SVR(kernel="rbf")
 
 model.fit(X_train, y_train)
 
-# -----------------------------
+# --------------------------------
 # Model Evaluation
-# -----------------------------
+# --------------------------------
 y_pred_scaled = model.predict(X_test)
 
-# Convert predictions back
 y_pred = y_scaler.inverse_transform(
     y_pred_scaled.reshape(-1, 1)
 )
@@ -86,12 +85,13 @@ r2 = r2_score(y_test_original, y_pred)
 rmse = np.sqrt(mean_squared_error(y_test_original, y_pred))
 
 st.subheader("Model Performance")
-st.write(f"R² Score: {round(r2, 3)}")
-st.write(f"RMSE: {round(rmse, 3)}")
 
-# -----------------------------
-# User Input Section
-# -----------------------------
+st.write(f"R² Score: {r2:.3f}")
+st.write(f"RMSE: {rmse:.3f}")
+
+# --------------------------------
+# User Input
+# --------------------------------
 st.subheader("Enter Wine Features")
 
 fixed_acidity = st.number_input("Fixed Acidity", value=7.4)
@@ -106,36 +106,36 @@ pH = st.number_input("pH", value=3.51)
 sulphates = st.number_input("Sulphates", value=0.56)
 alcohol = st.number_input("Alcohol", value=9.4)
 
-# -----------------------------
+# --------------------------------
 # Prediction
-# -----------------------------
+# --------------------------------
 if st.button("Predict Wine Quality"):
 
-    input_data = np.array([[
-        fixed_acidity,
-        volatile_acidity,
-        citric_acid,
-        residual_sugar,
-        chlorides,
-        free_sulfur_dioxide,
-        total_sulfur_dioxide,
-        density,
-        pH,
-        sulphates,
-        alcohol
-    ]])
+    input_df = pd.DataFrame([{
+        "fixed acidity": fixed_acidity,
+        "volatile acidity": volatile_acidity,
+        "citric acid": citric_acid,
+        "residual sugar": residual_sugar,
+        "chlorides": chlorides,
+        "free sulfur dioxide": free_sulfur_dioxide,
+        "total sulfur dioxide": total_sulfur_dioxide,
+        "density": density,
+        "pH": pH,
+        "sulphates": sulphates,
+        "alcohol": alcohol
+    }])
 
-    # Scale Input Data
-    input_scaled = x_scaler.transform(input_data)
+    # Scale input
+    input_scaled = x_scaler.transform(input_df)
 
     # Predict
     prediction_scaled = model.predict(input_scaled)
 
-    # Convert back to original scale
+    # Convert back
     prediction = y_scaler.inverse_transform(
         prediction_scaled.reshape(-1, 1)
     )
 
     st.success(
-        f"Predicted Wine Quality: {round(prediction[0][0], 2)}"
+        f"Predicted Wine Quality: {prediction[0][0]:.2f}"
     )
